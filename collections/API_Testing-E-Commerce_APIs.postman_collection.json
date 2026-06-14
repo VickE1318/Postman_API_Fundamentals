@@ -1,0 +1,558 @@
+{
+  "info": {
+    "_postman_id": "7fcd612e-2b4d-4363-b2c6-95a08f94e0ac",
+    "name": "API Testing - E-Commerce APIs",
+    "description": "This collection covers API testing for a core set of e-commerce functionalities, organized into three areas:\n\n- **Authentication** – Validates the login endpoint under both positive and negative conditions, including correct credentials, wrong passwords, and empty inputs.\n- **Products** – Tests product listing and retrieval, covering data validation, single-product lookups, and handling of unavailable product IDs.\n- **Cart** – Verifies cart creation scenarios, including valid data, unavailable products, invalid quantities, and invalid user IDs.\n\nAll requests are built against a `{{BaseURL}}` environment variable, making it straightforward to run the suite across different environments (development, staging, production).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "22608295"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Positive_Login - Proper credential",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code: 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Token generated\", function () {\r",
+                  "    let response = pm.response.json();\r",
+                  "    pm.expect(response.accessToken).to.exist;\r",
+                  "});\r",
+                  "\r",
+                  "let response = pm.response.json();\r",
+                  "pm.environment.set(\"token\", response.accessToken);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n   \"username\": \"emilys\",\r\n    \"password\": \"emilyspass\"\r\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BaseURL}}/auth/login",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Trying to login with proper username and password. Getting the authentication token as result."
+          },
+          "response": []
+        },
+        {
+          "name": "Negative_Login - Improper password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Improper Password used\", function () {",
+                  "    let response = pm.response.json();",
+                  "    let statusCheck = pm.response.code === 400;",
+                  "    let messageCheck = response.message && response.message.toLowerCase().includes(\"invalid\");",
+                  "    pm.expect(statusCheck && messageCheck).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Token not generated for invalid credential\", function () {",
+                  "    let response = pm.response.json();",
+                  "    pm.expect(response.accessToken).to.not.exist;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n   \"username\": \"emilys\",\r\n    \"password\": \"emilyspass_@#_*_*)\"\r\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BaseURL}}/auth/login",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Negative_Login - Empty Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"No credential Given\", function () {",
+                  "    let response = pm.response.json();",
+                  "    let statusCheck = pm.response.to.have.status(400);",
+                  "    let messageCheck = response.message && response.message.includes(\"not valid JSON\");",
+                  "    pm.expect(statusCheck && messageCheck).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Token not generated for invalid credential\", function () {",
+                  "    let response = pm.response.json();",
+                  "    pm.expect(response.accessToken).to.not.exist;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n   \"username\":,\r\n    \"password\":\r\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BaseURL}}/auth/login",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Contains test cases for the login endpoint, covering both positive and negative scenarios. Tests validate successful authentication with correct credentials, as well as error handling for incorrect passwords and empty credential inputs."
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Products Displayed\",function(){\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Products exist\", function () {\r",
+                  "    let response = pm.response.json();\r",
+                  "    pm.expect(response.products.length).to.be.above(0);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseURL}}/products",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Product Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Product has proper data\", function () {\r",
+                  "    let response = pm.response.json();\r",
+                  "    let product = response.products[0];\r",
+                  "\r",
+                  "    pm.expect(product.id).to.be.a(\"number\");\r",
+                  "    pm.expect(product.title).to.be.a(\"string\").and.not.empty;\r",
+                  "    pm.expect(product.description).to.be.a(\"string\").and.not.empty;\r",
+                  "    pm.expect(product.category).to.be.a(\"string\").and.not.empty;\r",
+                  "    pm.expect(product.price).to.be.a(\"number\");\r",
+                  "    pm.expect(product.rating).to.be.a(\"number\");\r",
+                  "\r",
+                  "    pm.expect(product.stock).to.be.at.least(0);\r",
+                  "\r",
+                  "    pm.expect(product.tags).to.be.an(\"array\").that.is.not.empty;\r",
+                  "\r",
+                  "    pm.expect(product.brand).to.be.a(\"string\").and.not.empty;\r",
+                  "    pm.expect(product.sku).to.be.a(\"string\").and.not.empty;\r",
+                  "\r",
+                  "    pm.expect(product.dimensions).to.have.keys([\"width\", \"height\", \"depth\"]);\r",
+                  "\r",
+                  "    pm.expect(product.reviews).to.be.an(\"array\");\r",
+                  "    product.reviews.forEach(r => {\r",
+                  "        pm.expect(r.rating).to.be.a(\"number\");\r",
+                  "        pm.expect(r.comment).to.be.a(\"string\");\r",
+                  "        pm.expect(r.reviewerName).to.be.a(\"string\");\r",
+                  "    });\r",
+                  "\r",
+                  "    pm.expect(product.images).to.be.an(\"array\").that.is.not.empty;\r",
+                  "    pm.expect(product.thumbnail).to.be.a(\"string\").and.not.empty;\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseURL}}/products",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get a single product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Product found\", function(){\r",
+                  "  let response = pm.response.json();\r",
+                  "  let checkStatus = pm.response.to.have.statusCode(200);\r",
+                  "  let titleChechk = response.title.includes(\"Essence Mascara Lash Princess\");\r",
+                  "  pm.expect(checkStatus && titleChechk).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseURL}}/products/1",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "products",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checking unavailable product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Product not available\", function(){\r",
+                  "  let response = pm.response.json();\r",
+                  "  let checkStatus = pm.response.to.have.statusCode(404);\r",
+                  "  let titleChechk = response.message.includes(\"not found\");\r",
+                  "  pm.expect(checkStatus && titleChechk).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseURL}}/products/192838",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "products",
+                "192838"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Contains test cases for the product catalog endpoints. Tests cover retrieving the full product list, validating product data structure and fields, fetching a single product by ID, and handling requests for non-existent product IDs."
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Add a cart - With valid data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Cart added\",function(){\r",
+                  "   pm.response.to.have.status(201);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"userId\": 1,\r\n  \"products\": [\r\n    {\r\n      \"id\": 1,\r\n      \"quantity\": 2\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BaseURL}}/carts/add",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "carts",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add a cart - With unavailable product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Product not available\",function(){\r",
+                  "   pm.response.to.have.status(404);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"userId\": 1,\r\n  \"products\": [\r\n    {\r\n      \"id\": 189203874,\r\n      \"quantity\": 2\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BaseURL}}/carts/add",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "carts",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add a cart - With invalid quantity data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status Code: 400\",function(){\r",
+                  "   pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Error message contains unexpected token\", function(){\r",
+                  "    pm.expect(pm.response.text()).to.include(\"Unexpected token '('\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"userId\": 1,\r\n  \"products\": [\r\n    {\r\n      \"id\": 1,\r\n      \"quantity\": (_(#_*208340,\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BaseURL}}/carts/add",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "carts",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add a cart - With invalid user ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"User ID not found\", function(){\r",
+                  "  let response = pm.response.json();\r",
+                  "  let checkStatus = pm.response.to.have.statusCode(404);\r",
+                  "  let titleChechk = response.message.includes(\"not found\");\r",
+                  "  pm.expect(checkStatus && titleChechk).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"userId\": 8897,\r\n  \"products\": [\r\n    {\r\n      \"id\": 1,\r\n      \"quantity\": 2\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BaseURL}}/carts/add",
+              "host": [
+                "{{BaseURL}}"
+              ],
+              "path": [
+                "carts",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Contains test cases for the cart creation endpoint. Tests cover adding a cart with valid data, as well as negative scenarios including unavailable products, invalid quantity values, and invalid user IDs."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "BaseURL",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
